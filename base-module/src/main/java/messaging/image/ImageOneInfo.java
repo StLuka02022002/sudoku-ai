@@ -1,6 +1,6 @@
-package info.image;
+package messaging.image;
 
-import info.TelegramInfo;
+import messaging.TelegramInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

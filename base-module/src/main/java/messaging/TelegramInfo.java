@@ -1,4 +1,4 @@
-package info;
+package messaging;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

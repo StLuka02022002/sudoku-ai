@@ -1,20 +1,17 @@
-package info.image;
+package messaging.image;
 
-import info.TelegramInfo;
+import messaging.TelegramInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ImagesInfo {
+public class ImageInfo {
 
-    private Set<String> imagesPaths;
-    private Integer countImages;
+    private String imagePath;
     private TelegramInfo telegramInfo;
 }
