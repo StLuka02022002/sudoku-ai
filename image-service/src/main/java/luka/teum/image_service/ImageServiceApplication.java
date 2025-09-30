@@ -1,13 +1,21 @@
 package luka.teum.image_service;
 
+import nu.pattern.OpenCV;
+import org.opencv.core.Core;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+@EnableScheduling
 @SpringBootApplication
 public class ImageServiceApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(ImageServiceApplication.class, args);
-	}
+    static {
+        OpenCV.loadLocally();
+    }
 
+    public static void main(String[] args) {
+        System.out.println(Core.VERSION);
+        SpringApplication.run(ImageServiceApplication.class, args);
+    }
 }
