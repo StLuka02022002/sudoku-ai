@@ -30,7 +30,7 @@
         <java.version>17</java.version>
     </properties>
     <dependencies>
-                <dependency>
+        <dependency>
             <groupId>luka.teum</groupId>
             <artifactId>base-module</artifactId>
             <version>0.0.1-SNAPSHOT</version>

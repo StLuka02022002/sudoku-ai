@@ -35,6 +35,7 @@
     <modules>
         <module>image-service</module>
         <module>base-module</module>
+        <module>telegram-service</module>
     </modules>
 
     <dependencies>
