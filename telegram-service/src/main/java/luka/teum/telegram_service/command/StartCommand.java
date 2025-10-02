@@ -5,19 +5,28 @@ import luka.teum.telegram_service.command.base.Commands;
 import luka.teum.telegram_service.mapping.UserMapping;
 import luka.teum.telegram_service.model.entity.User;
 import luka.teum.telegram_service.service.UserService;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 
 
-@Service
+@Component
 public class StartCommand extends BaseCommand {
 
-    private final String HELLO_MESSAGE = """
-            Привет, %s!
-            Я могу следить за всеми Вашими долгами и за всеми Вашими должниками.
-            Хотите добавить долг?
+    public static final String HELLO_MESSAGE = """
+            Привет, 🧠 любитель головоломок! %s!
+                        
+            Я — твой личный помощник по решению судоку. Просто отправь мне фотографию или скриншот с незаконченной сеткой судоку, и я быстро найду решение!
+                        
+            ✨ Что я умею:
+            • Решать классические судоку 9x9 по изображению
+            • Отображать решение в удобном, читаемом формате
+            • Предлагать альтернативные действия
+                        
+            Чтобы начать, просто загрузи фото или воспользуйся кнопкой «📤 Загрузить судоку» ниже.
+                        
+            Нужна помощь? Команда /help расскажет обо всем подробнее!
             """;
 
     private final UserService userService;
@@ -36,8 +45,7 @@ public class StartCommand extends BaseCommand {
     }
 
     private User createUser(Message message) {
-        //TODO поменять id чат на id пользователя
-        Long userTelegramId = message.getChat().getId();
+        Long userTelegramId = message.getFrom().getId();
         if (!userService.existsByTelegramId(userTelegramId)) {
             User user = userMapping.getUserEntityByChart(message.getChat());
             return userService.save(user);
@@ -52,6 +60,7 @@ public class StartCommand extends BaseCommand {
         SendMessage answer = new SendMessage();
         answer.setChatId(String.valueOf(message.getChatId()));
         answer.setText(text);
+        answer.setParseMode("HTML");
 
         sendMessage(answer, absSender);
     }

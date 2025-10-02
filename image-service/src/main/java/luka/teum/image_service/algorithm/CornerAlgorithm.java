@@ -1,9 +1,9 @@
 package luka.teum.image_service.algorithm;
 
+import lombok.Setter;
 import luka.teum.image_service.data.RightTriangle;
 import luka.teum.image_service.parellel.TriangleParallel;
 import luka.teum.image_service.util.ImageUtil;
-import luka.teum.image_service.util.PointsUtil;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
@@ -22,7 +22,8 @@ public class CornerAlgorithm implements ImageAlgorithm {
 
     private final ImageUtil imageUtil;
     private final TriangleParallel triangleParallel;
-    private final PointsUtil pointsUtil;
+    @Setter
+    private PrepareProcess prepareProcess;
     private double contrast = 3.0;
     private double thresh = 225.0;
     private double maxVal = 255.0;
@@ -33,24 +34,19 @@ public class CornerAlgorithm implements ImageAlgorithm {
     double minS = 0;
     double minSV2 = 80000;
 
-    public CornerAlgorithm(ImageUtil imageUtil, PointsUtil pointsUtil, TriangleParallel triangleParallel) {
+    public CornerAlgorithm(ImageUtil imageUtil, TriangleParallel triangleParallel) {
         if (imageUtil == null) {
             throw new IllegalArgumentException("util.ImageUtil cannot be null");
-        }
-        if (pointsUtil == null) {
-            throw new IllegalArgumentException("util.PointsUtil cannot be null");
         }
         if (triangleParallel == null) {
             throw new IllegalArgumentException("TriangleParallel cannot be null");
         }
         this.imageUtil = imageUtil;
-        this.pointsUtil = pointsUtil;
         this.triangleParallel = triangleParallel;
     }
 
     public CornerAlgorithm() {
         this.imageUtil = new ImageUtil();
-        this.pointsUtil = new PointsUtil();
         this.triangleParallel = new TriangleParallel();
     }
 
@@ -144,6 +140,9 @@ public class CornerAlgorithm implements ImageAlgorithm {
         Mat image = this.imageUtil.contrastEnhancement(data, this.contrast);
         Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2GRAY);
         Imgproc.threshold(image, image, this.thresh, this.maxVal, Imgproc.THRESH_BINARY);
+        if (prepareProcess != null) {
+            this.prepareProcess.prepareProcess(image);
+        }
         return image;
     }
 

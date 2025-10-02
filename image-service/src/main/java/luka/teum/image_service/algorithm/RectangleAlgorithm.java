@@ -1,5 +1,6 @@
 package luka.teum.image_service.algorithm;
 
+import lombok.Setter;
 import luka.teum.image_service.util.ImageUtil;
 import luka.teum.image_service.util.PointsUtil;
 import org.opencv.core.*;
@@ -19,6 +20,8 @@ public class RectangleAlgorithm implements ImageAlgorithm {
 
     private final ImageUtil imageUtil;
     private final PointsUtil pointsUtil;
+    @Setter
+    private PrepareProcess prepareProcess;
     private double contrast = 3.0;
     private double thresh = 225.0;
     private double maxVal = 255.0;
@@ -27,12 +30,15 @@ public class RectangleAlgorithm implements ImageAlgorithm {
     private final int targetVertices = 4;
 
 
-    public RectangleAlgorithm(ImageUtil imageUtil, PointsUtil pointsUtil) {
+    public RectangleAlgorithm(ImageUtil imageUtil, PointsUtil pointsUtil, PrepareProcess prepareProcess) {
         if (imageUtil == null) {
-            throw new IllegalArgumentException("util.ImageUtil cannot be null");
+            throw new IllegalArgumentException("ImageUtil cannot be null");
         }
         if (pointsUtil == null) {
-            throw new IllegalArgumentException("util.PointsUtil cannot be null");
+            throw new IllegalArgumentException("PointsUtil cannot be null");
+        }
+        if (prepareProcess == null) {
+            throw new IllegalArgumentException("PrepareProcess cannot be null");
         }
         this.imageUtil = imageUtil;
         this.pointsUtil = pointsUtil;
@@ -83,6 +89,9 @@ public class RectangleAlgorithm implements ImageAlgorithm {
         Imgproc.threshold(image, image, this.thresh, this.maxVal, Imgproc.THRESH_BINARY);
         Imgproc.Canny(image, image, 100, 255);
         Imgproc.dilate(image, image, new Mat(), new Point(-1, -1), 1);
+        if(prepareProcess != null){
+            this.prepareProcess.prepareProcess(image);
+        }
         return image;
     }
 

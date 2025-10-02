@@ -1,5 +1,7 @@
 package luka.teum.image_service.algorithm;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 
@@ -20,6 +22,8 @@ public class Algorithms {
 
     private final List<AlgorithmConfig> algorithmConfigs;
     private final ExecutorService executorService;
+
+    private ImageAlgorithm.PrepareProcess prepareProcess;
     private final boolean parallelExecution;
 
     public Algorithms(List<AlgorithmConfig> algorithmConfigs) {
@@ -40,14 +44,16 @@ public class Algorithms {
         }
     }
 
-    public Algorithms() {
-        this(createDefaultAlgorithms());
+    public Algorithms(ImageAlgorithm.PrepareProcess prepareProcess) {
+        this(createDefaultAlgorithms(prepareProcess));
     }
 
-    private static List<AlgorithmConfig> createDefaultAlgorithms() {
+    private static List<AlgorithmConfig> createDefaultAlgorithms(ImageAlgorithm.PrepareProcess prepareProcess) {
         List<AlgorithmConfig> configs = new ArrayList<>();
         ImageAlgorithm rectangleAlgorithm = new RectangleAlgorithm();
         ImageAlgorithm cornerAlgorithm = new CornerAlgorithm();
+        rectangleAlgorithm.setPrepareProcess(prepareProcess);
+        cornerAlgorithm.setPrepareProcess(prepareProcess);
 
         configs.add(new AlgorithmConfig("Rectangle_Default", rectangleAlgorithm::algorithm));
         configs.add(new AlgorithmConfig("Rectangle_V1", data -> rectangleAlgorithm.algorithm(data, RectangleAlgorithm.V1)));
@@ -238,6 +244,8 @@ public class Algorithms {
         return new Statistics(results);
     }
 
+    @Setter
+    @Getter
     public static class AlgorithmConfig {
         private final String name;
         private final Solver solver;
@@ -255,22 +263,10 @@ public class Algorithms {
             this(name, solver, true, 2 * 60 * 1000);
         }
 
-        public String getName() {
-            return name;
-        }
-
-        public Solver getSolver() {
-            return solver;
-        }
-
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        public int getTimeoutMs() {
-            return timeoutMs;
-        }
     }
+
+    @Setter
+    @Getter
     public static class AlgorithmResult {
         private final String algorithmName;
         private final Point[] points;
@@ -294,26 +290,6 @@ public class Algorithms {
             this.errorMessage = errorMessage;
         }
 
-        public String getAlgorithmName() {
-            return algorithmName;
-        }
-
-        public Point[] getPoints() {
-            return points.clone();
-        }
-
-        public long getExecutionTimeMs() {
-            return executionTimeMs;
-        }
-
-        public boolean isSuccess() {
-            return success;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
         public boolean hasValidPoints() {
             return success && points != null && points.length == 4;
         }
@@ -330,6 +306,8 @@ public class Algorithms {
     }
 
 
+    @Setter
+    @Getter
     public static class Statistics {
         private final AlgorithmResult[] results;
         private final int totalAlgorithms;
@@ -360,34 +338,6 @@ public class Algorithms {
                     .filter(AlgorithmResult::hasValidPoints)
                     .max(Comparator.comparingInt(r -> r.getPoints().length))
                     .orElse(null);
-        }
-
-        public AlgorithmResult[] getResults() {
-            return results.clone();
-        }
-
-        public int getTotalAlgorithms() {
-            return totalAlgorithms;
-        }
-
-        public int getSuccessfulAlgorithms() {
-            return successfulAlgorithms;
-        }
-
-        public int getAlgorithmsWithValidPoints() {
-            return algorithmsWithValidPoints;
-        }
-
-        public double getAverageExecutionTime() {
-            return averageExecutionTime;
-        }
-
-        public AlgorithmResult getFastestAlgorithm() {
-            return fastestAlgorithm;
-        }
-
-        public AlgorithmResult getBestAlgorithm() {
-            return bestAlgorithm;
         }
 
         @Override
