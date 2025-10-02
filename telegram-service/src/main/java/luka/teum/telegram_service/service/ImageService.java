@@ -1,13 +1,13 @@
 package luka.teum.telegram_service.service;
 
 import luka.teum.telegram_service.storage.FileStorage;
-import luka.teum.telegram_service.storage.Storage;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.objects.File;
 import org.telegram.telegrambots.meta.api.objects.PhotoSize;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import storage.Storage;
 
 import java.util.Comparator;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.UUID;
 public class ImageService {
     private static final String INPUT_IMAGE_PREFIX = "input\\";
     private final DefaultAbsSender defaultAbsSender;
-    private final Storage storage;
+    private final Storage<java.io.File> storage;
 
     public ImageService(DefaultAbsSender defaultAbsSender) {
         this.defaultAbsSender = defaultAbsSender;

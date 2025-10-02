@@ -3,12 +3,12 @@ package luka.teum.image_service.processing;
 import lombok.extern.slf4j.Slf4j;
 import luka.teum.image_service.algorithm.Algorithms;
 import luka.teum.image_service.messaging.KafkaProducerService;
-import luka.teum.image_service.storage.Storage;
 import luka.teum.image_service.util.ImageUtil;
 import messaging.image.ImageInfo;
 import messaging.image.ImagesInfo;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import storage.Storage;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ImageProcessing {
 
-    private final Storage storage;
+    private final Storage<Mat> storage;
     private final KafkaProducerService kafkaProducerService;
 
     private static final String WRAPPED_IMAGE_PREFIX = "wrapped\\";
@@ -26,7 +26,7 @@ public class ImageProcessing {
     private final Algorithms algorithms;
     private final ImageUtil imageUtil;
 
-    public ImageProcessing(Storage storage, KafkaProducerService kafkaProducerService) {
+    public ImageProcessing(Storage<Mat> storage, KafkaProducerService kafkaProducerService) {
         this.storage = storage;
         this.kafkaProducerService = kafkaProducerService;
         this.algorithms = new Algorithms();

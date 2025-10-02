@@ -1,10 +1,9 @@
 package luka.teum.image_service.messaging;
 
 import jakarta.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import luka.teum.image_service.processing.ImageProcessing;
-import luka.teum.image_service.storage.FileStorage;
+import luka.teum.image_service.storage.MatFileStorage;
 import messaging.image.ImageInfo;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
@@ -20,12 +19,12 @@ import java.util.concurrent.Executors;
 @Component
 public class KafkaConsumerService {
 
-    private final FileStorage fileStorage;
+    private final MatFileStorage matFileStorage;
     private final KafkaProducerService kafkaProducerService;
     private final ExecutorService executorService;
 
-    public KafkaConsumerService(FileStorage fileStorage, KafkaProducerService kafkaProducerService) {
-        this.fileStorage = fileStorage;
+    public KafkaConsumerService(MatFileStorage matFileStorage, KafkaProducerService kafkaProducerService) {
+        this.matFileStorage = matFileStorage;
         this.kafkaProducerService = kafkaProducerService;
         this.executorService = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors()
@@ -47,7 +46,7 @@ public class KafkaConsumerService {
         log.debug("Image details: {}", imageInfo);
 
         try {
-            ImageProcessing imageProcessing = new ImageProcessing(fileStorage, kafkaProducerService);
+            ImageProcessing imageProcessing = new ImageProcessing(matFileStorage, kafkaProducerService);
 
             executorService.submit(() -> {
                 try {
