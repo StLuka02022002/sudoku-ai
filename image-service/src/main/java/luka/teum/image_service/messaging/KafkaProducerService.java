@@ -1,16 +1,12 @@
 package luka.teum.image_service.messaging;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import messaging.BaseKafkaProducerService;
-import messaging.image.ImageOneInfo;
+import messaging.image.ImagesOneInfo;
 import messaging.image.ImagesInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -31,7 +27,7 @@ public class KafkaProducerService extends BaseKafkaProducerService {
         this.sendAsync(key, imagesInfo, imagesProcessingInfoTopic);
     }
 
-    public void sendImageProcessingOneInfoAsync(ImageOneInfo imagesOneInfo) {
+    public void sendImageProcessingOneInfoAsync(ImagesOneInfo imagesOneInfo) {
         String key = imagesOneInfo.getTelegramInfo().getUserId().toString();
         this.sendAsync(key, imagesOneInfo, imagesProcessingOneInfoTopic);
     }
@@ -41,9 +37,9 @@ public class KafkaProducerService extends BaseKafkaProducerService {
         return this.sendSync(key, imagesInfo, imagesProcessingInfoTopic);
     }
 
-    public boolean sendImageProcessingOneInfo(ImageOneInfo imageOneInfo) {
-        String key = imageOneInfo.getTelegramInfo().getUserId().toString();
-        return this.sendSync(key, imageOneInfo, imagesProcessingOneInfoTopic);
+    public boolean sendImageProcessingOneInfo(ImagesOneInfo imagesOneInfo) {
+        String key = imagesOneInfo.getTelegramInfo().getUserId().toString();
+        return this.sendSync(key, imagesOneInfo, imagesProcessingOneInfoTopic);
     }
 
     public boolean sendWithTimeout(ImagesInfo imagesInfo, long timeoutMs) {
@@ -55,12 +51,12 @@ public class KafkaProducerService extends BaseKafkaProducerService {
         return this.sendWithTimeout(imagesInfo, DEFAULT_TIMEOUT_MS);
     }
 
-    public boolean sendWithTimeout(ImageOneInfo imageOneInfo, long timeoutMs) {
-        String key = imageOneInfo.getTelegramInfo().getUserId().toString();
-        return this.sendWithTimeout(key, imageOneInfo, imagesProcessingOneInfoTopic, timeoutMs);
+    public boolean sendWithTimeout(ImagesOneInfo imagesOneInfo, long timeoutMs) {
+        String key = imagesOneInfo.getTelegramInfo().getUserId().toString();
+        return this.sendWithTimeout(key, imagesOneInfo, imagesProcessingOneInfoTopic, timeoutMs);
     }
 
-    public boolean sendWithTimeout(ImageOneInfo imageOneInfo) {
-        return this.sendWithTimeout(imageOneInfo, DEFAULT_TIMEOUT_MS);
+    public boolean sendWithTimeout(ImagesOneInfo imagesOneInfo) {
+        return this.sendWithTimeout(imagesOneInfo, DEFAULT_TIMEOUT_MS);
     }
 }

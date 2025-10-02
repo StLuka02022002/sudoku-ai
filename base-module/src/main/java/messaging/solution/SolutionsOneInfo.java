@@ -1,19 +1,19 @@
-package messaging.image;
+package messaging.solution;
 
-import messaging.TelegramInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import messaging.TelegramInfo;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ImageOneInfo {
+public class SolutionsOneInfo {
 
-    private String imagePath;
-    private Integer imageId;
-    private Integer countImages;
+    private SolutionsInfo solutionsInfo;
+    private Integer solutionId;
+    private Integer countSolution;
     private TelegramInfo telegramInfo;
 }
