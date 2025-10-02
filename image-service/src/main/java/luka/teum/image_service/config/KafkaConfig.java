@@ -58,30 +58,30 @@ public class KafkaConfig {
                 .build();
     }
 
-    @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
-    public void sendData() {
-        try {
-
-            TelegramInfo telegramInfo = TelegramInfo.builder()
-                    .userId(random.nextLong())
-                    .username(UUID.randomUUID().toString())
-                    .messageId(random.nextLong())
-                    .chartId(random.nextLong())
-                    .info(UUID.randomUUID().toString())
-                    .build();
-
-            ImageInfo imageInfo = ImageInfo.builder()
-                    .imagePath("C:\\Code\\Neyro\\opencv\\Info.PNG")
-                    .telegramInfo(telegramInfo)
-                    .build();
-
-            SendResult<String, Object> result = kafkaTemplate.send(imageProcessingInfoTopic,
-                            telegramInfo.getUserId().toString(), imageInfo)
-                    .get();
-            log.info("Message sent successfully to partition: {}",
-                    result.getRecordMetadata().partition());
-        } catch (Exception e) {
-            log.error("Failed to send message synchronously", e);
-        }
-    }
+//    @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
+//    public void sendData() {
+//        try {
+//
+//            TelegramInfo telegramInfo = TelegramInfo.builder()
+//                    .userId(random.nextLong())
+//                    .username(UUID.randomUUID().toString())
+//                    .messageId(random.nextLong())
+//                    .chartId(random.nextLong())
+//                    .info(UUID.randomUUID().toString())
+//                    .build();
+//
+//            ImageInfo imageInfo = ImageInfo.builder()
+//                    .imagePath("C:\\Code\\Neyro\\opencv\\Info.PNG")
+//                    .telegramInfo(telegramInfo)
+//                    .build();
+//
+//            SendResult<String, Object> result = kafkaTemplate.send(imageProcessingInfoTopic,
+//                            telegramInfo.getUserId().toString(), imageInfo)
+//                    .get();
+//            log.info("Message sent successfully to partition: {}",
+//                    result.getRecordMetadata().partition());
+//        } catch (Exception e) {
+//            log.error("Failed to send message synchronously", e);
+//        }
+//    }
 }

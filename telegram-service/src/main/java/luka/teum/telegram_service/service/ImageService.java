@@ -24,14 +24,14 @@ public class ImageService {
         this.storage = new FileStorage();
     }
 
-    public boolean process(Long id, List<PhotoSize> photos) {
+    public String process(Long id, List<PhotoSize> photos) {
         PhotoSize photo = photos.stream()
                 .max(Comparator.comparing(photoSize -> photoSize.getWidth() * photoSize.getHeight()))
                 .orElse(photos.get(photos.size() - 1));
         return this.process(id, photo);
     }
 
-    public boolean process(Long id, PhotoSize photo) {
+    public String process(Long id, PhotoSize photo) {
         String fileId = photo.getFileId();
         GetFile getFile = new GetFile();
         getFile.setFileId(fileId);
@@ -41,9 +41,9 @@ public class ImageService {
 
             java.io.File downloadedFile = defaultAbsSender.downloadFile(filePath);
             String fileName = INPUT_IMAGE_PREFIX + id + "\\" + UUID.randomUUID();
-            return storage.saveData(fileName, downloadedFile);
+            return storage.saveData(fileName, downloadedFile) ? fileName : null;
         } catch (TelegramApiException e) {
-            return false;
+            return null;
         }
     }
 }

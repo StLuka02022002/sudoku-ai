@@ -122,7 +122,7 @@ public abstract class BaseFileStorage<T> implements Storage<T> {
         for (String ext : SUPPORTED_EXTENSIONS) {
             if (location.toLowerCase().endsWith(ext)) {
                 log.debug("Using existing file extension for: {}", location);
-                return location;
+                return BASE_DIRECTORY + location;
             }
         }
 
