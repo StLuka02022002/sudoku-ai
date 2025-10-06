@@ -191,9 +191,9 @@ public class ImageUtil {
 
         Mat clonedImage = image.clone();
         Mat[][] result = new Mat[rows][cols];
-        int rowStep = width / rows;
-        int colStep = height / cols;
-        int border = 2;
+        int rowStep = height / rows;
+        int colStep = width / cols;
+        int border = 0;
 
         try {
             for (int i = 0; i < rows; i++) {

@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import messaging.Solution;
 import messaging.TelegramInfo;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor

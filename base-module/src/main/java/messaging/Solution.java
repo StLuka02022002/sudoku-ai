@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Solution {
 
-    public static final int NO_SOLUTION = -1;
+    public static final int NO_SOLUTION = 0;
     public static final int SUDOKU_SIZE = 9;
 
     private int[][] digits;
@@ -37,5 +37,17 @@ public class Solution {
             }
         }
         return true;
+    }
+
+    public String getSolution() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int[] line : digits) {
+            for (int i = 0; i < line.length; i++) {
+                stringBuilder.append(line[i]);
+                stringBuilder.append(i == line.length - 1 ? "" : ", ");
+            }
+            stringBuilder.append("\n");
+        }
+        return stringBuilder.toString();
     }
 }
