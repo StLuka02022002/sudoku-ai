@@ -27,7 +27,7 @@ public class KafkaProducerService extends BaseKafkaProducerService {
 
     public void sendSolutionsProcessingOneInfoAsync(SolutionsOneInfo solutionsOneInfo) {
         String key = solutionsOneInfo.getTelegramInfo().getUserId().toString();
-        this.sendAsync(key, solutionsOneInfo, solutionsProcessingInfoTopic);
+        this.sendAsync(key, solutionsOneInfo, solutionsProcessingOneInfoTopic);
     }
 
     public void sendSolutionsProcessingInfoSync(SolutionsInfo solutionsInfo) {
@@ -37,12 +37,17 @@ public class KafkaProducerService extends BaseKafkaProducerService {
 
     public void sendSolutionsProcessingOneInfoSync(SolutionsOneInfo solutionsOneInfo) {
         String key = solutionsOneInfo.getTelegramInfo().getUserId().toString();
-        this.sendSync(key, solutionsOneInfo, solutionsProcessingInfoTopic);
+        this.sendSync(key, solutionsOneInfo, solutionsProcessingOneInfoTopic);
     }
 
     public void sendWithTimeout(SolutionsInfo solutionsInfo, long timeoutMs) {
         String key = solutionsInfo.getTelegramInfo().getUserId().toString();
         this.sendWithTimeout(key, solutionsInfo, solutionsProcessingInfoTopic, timeoutMs);
+    }
+
+    public void sendWithTimeout(SolutionsOneInfo solutionsOneInfo, long timeoutMs) {
+        String key = solutionsOneInfo.getTelegramInfo().getUserId().toString();
+        this.sendWithTimeout(key, solutionsOneInfo, solutionsProcessingOneInfoTopic, timeoutMs);
     }
 
     public void sendWithTimeout(SolutionsInfo solutionsInfo) {
@@ -52,6 +57,6 @@ public class KafkaProducerService extends BaseKafkaProducerService {
 
     public void sendWithTimeout(SolutionsOneInfo solutionsOneInfo) {
         String key = solutionsOneInfo.getTelegramInfo().getUserId().toString();
-        this.sendWithTimeout(key, solutionsOneInfo, solutionsProcessingInfoTopic, DEFAULT_TIMEOUT_MS);
+        this.sendWithTimeout(key, solutionsOneInfo, solutionsProcessingOneInfoTopic, DEFAULT_TIMEOUT_MS);
     }
 }

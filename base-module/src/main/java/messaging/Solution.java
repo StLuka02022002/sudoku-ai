@@ -39,7 +39,8 @@ public class Solution {
         return true;
     }
 
-    public String getSolution() {
+    @Override
+    public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         for (int[] line : digits) {
             for (int i = 0; i < line.length; i++) {

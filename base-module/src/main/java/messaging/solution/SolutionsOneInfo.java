@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import messaging.Solution;
 import messaging.TelegramInfo;
 
 @Data
@@ -12,7 +13,7 @@ import messaging.TelegramInfo;
 @AllArgsConstructor
 public class SolutionsOneInfo {
 
-    private SolutionsInfo solutionsInfo;
+    private Solution solution;
     private Integer solutionId;
     private Integer countSolution;
     private TelegramInfo telegramInfo;
