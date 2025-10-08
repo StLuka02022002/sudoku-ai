@@ -3,11 +3,18 @@ package luka.teum.image_service.util;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ImageUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(ImageUtil.class);
 
     public Mat loadImage(String filePath) {
         if (filePath == null || filePath.trim().isEmpty()) {
@@ -173,7 +180,7 @@ public class ImageUtil {
         }
     }
 
-    public Mat[][] split(Mat image, int rows, int cols) {
+    public Mat[][] split(Mat image, int rows, int cols, int border) {
         validateImage(image);
 
         if (rows <= 0 || cols <= 0) {
@@ -193,7 +200,6 @@ public class ImageUtil {
         Mat[][] result = new Mat[rows][cols];
         int rowStep = height / rows;
         int colStep = width / cols;
-        int border = 0;
 
         try {
             for (int i = 0; i < rows; i++) {
@@ -215,7 +221,7 @@ public class ImageUtil {
         }
     }
 
-    private void releaseSubMats(Mat[][] mats) {
+    public void releaseSubMats(Mat[][] mats) {
         if (mats == null) return;
 
         for (Mat[] row : mats) {
@@ -223,6 +229,208 @@ public class ImageUtil {
                 if (mat != null) {
                     mat.release();
                 }
+            }
+        }
+    }
+
+    public Mat extractDigit(Mat image) {
+        return this.extractDigit(image, 5);
+    }
+
+    public Mat extractDigit(Mat image, int padding) {
+        if (image.empty()) {
+            throw new IllegalArgumentException("Input image is empty");
+        }
+
+        Rect boundingBox = this.findDigitBoundingBox(image);
+
+        if (boundingBox == null) {
+            log.debug("No digit found in image");
+            return new Mat();
+        }
+
+        Rect paddedBox = this.addPadding(boundingBox, padding, image.size());
+
+        return image.submat(paddedBox);
+    }
+
+    public Mat extractDigitAdvanced(Mat image, int padding) {
+        Mat gray = new Mat();
+        Mat binary = new Mat();
+        Mat kernel = new Mat();
+        Mat hierarchy = new Mat();
+        List<MatOfPoint> contours = new ArrayList<>();
+        try {
+            if (image.channels() > 1) {
+                Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY);
+            } else {
+                gray = image.clone();
+            }
+
+            Imgproc.adaptiveThreshold(gray, binary, 255,
+                    Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+                    Imgproc.THRESH_BINARY_INV, 11, 2);
+
+            kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2));
+            Imgproc.morphologyEx(binary, binary, Imgproc.MORPH_CLOSE, kernel);
+
+
+            Imgproc.findContours(binary, contours, hierarchy,
+                    Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+
+            Rect bestRect = this.findBestRect(contours);
+
+            Mat result = new Mat();
+            if (bestRect != null) {
+                Rect paddedRect = this.addPadding(bestRect, padding, image.size());
+                result = image.submat(paddedRect);
+            }
+            return result;
+        } finally {
+            gray.release();
+            binary.release();
+            kernel.release();
+            hierarchy.release();
+            for (MatOfPoint contour : contours) {
+                contour.release();
+            }
+        }
+    }
+
+    public Mat extractAndResizeDigit(Mat image, Size targetSize) {
+        Mat digit = this.extractDigit(image, 3);
+        Mat resized = new Mat();
+        try {
+            if (digit.empty()) {
+                return new Mat();
+            }
+
+            Mat result = Mat.zeros(targetSize, digit.type());
+
+            Rect roi = this.getRectWithNewSize(targetSize, digit);
+
+            Imgproc.resize(digit, resized, new Size(roi.width, roi.height));
+            resized.copyTo(result.submat(roi));
+            return result;
+        } finally {
+            digit.release();
+            resized.release();
+        }
+    }
+
+    private Rect findDigitBoundingBox(Mat image) {
+        Mat gray = new Mat();
+        Mat binary = new Mat();
+        Mat hierarchy = new Mat();
+        List<MatOfPoint> contours = new ArrayList<>();
+        try {
+            if (image.channels() > 1) {
+                Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY);
+            } else {
+                gray = image.clone();
+            }
+
+            Imgproc.threshold(gray, binary, 0, 255,
+                    Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
+
+
+            Imgproc.findContours(binary, contours, hierarchy,
+                    Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+
+            return this.findLargestRect(contours);
+
+        } finally {
+            gray.release();
+            binary.release();
+            hierarchy.release();
+            for (MatOfPoint contour : contours) {
+                contour.release();
+            }
+        }
+    }
+
+    private Rect findLargestRect(List<MatOfPoint> contours) {
+        double maxArea = 0;
+        Rect largestRect = null;
+
+        for (MatOfPoint contour : contours) {
+            double area = Imgproc.contourArea(contour);
+            if (area > maxArea) {
+                maxArea = area;
+                largestRect = Imgproc.boundingRect(contour);
+            }
+        }
+        return largestRect;
+    }
+
+    private Rect findBestRect(List<MatOfPoint> contours) {
+        Rect bestRect = null;
+        double bestScore = 0;
+
+        for (MatOfPoint contour : contours) {
+            double area = Imgproc.contourArea(contour);
+            Rect rect = Imgproc.boundingRect(contour);
+
+            double aspectRatio = (double) rect.width / rect.height;
+            double score = area * (1 - Math.abs(0.7 - aspectRatio));
+
+            if (score > bestScore && area > 50) {
+                bestScore = score;
+                bestRect = rect;
+            }
+        }
+        return bestRect;
+    }
+
+    private Rect addPadding(Rect rect, int padding, Size imageSize) {
+        int x = Math.max(0, rect.x - padding);
+        int y = Math.max(0, rect.y - padding);
+        int width = Math.min((int) imageSize.width - x, rect.width + 2 * padding);
+        int height = Math.min((int) imageSize.height - y, rect.height + 2 * padding);
+
+        return new Rect(x, y, width, height);
+    }
+
+    private Rect getRectWithNewSize(Size targetSize, Mat digit) {
+        double scale = Math.min(targetSize.width / digit.cols(),
+                targetSize.height / digit.rows());
+
+        Size newSize = new Size(digit.cols() * scale, digit.rows() * scale);
+
+        int x = (int) ((targetSize.width - newSize.width) / 2);
+        int y = (int) ((targetSize.height - newSize.height) / 2);
+
+        return new Rect(x, y, (int) newSize.width, (int) newSize.height);
+    }
+
+    public static void showImage(Mat img, String title) {
+        BufferedImage bufferedImage = new ImageUtil().getBufferedImageFromMat(img);
+        if (bufferedImage == null) return;
+
+        JFrame window = new JFrame(title);
+        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        ImageIcon imageIcon = new ImageIcon(bufferedImage);
+        JLabel label = new JLabel(imageIcon);
+        JScrollPane pane = new JScrollPane(label);
+
+        int w = bufferedImage.getWidth();
+        int h = bufferedImage.getWidth();
+
+        window.setSize(w, h);
+        window.setContentPane(pane);
+        window.pack();
+
+        window.setLocationRelativeTo(null);
+        window.setVisible(true);
+    }
+
+    public void releaseMats(Mat... mats) {
+        for (Mat mat : mats) {
+            if (mat != null) {
+                mat.release();
             }
         }
     }

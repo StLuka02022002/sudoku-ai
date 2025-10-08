@@ -1,80 +1,108 @@
 package luka.teum.dl_service.prepare;
 
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import luka.teum.dl_service.ai.stat.DigitalClassifier;
 import luka.teum.image_service.util.ImageUtil;
 import messaging.Solution;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 
-@Data
-@RequiredArgsConstructor
 public class ImagePrepare {
 
+    public static final Size IMAGE_DIGIT_SIZE = new Size(60, 60);
+
+    private static final int ADAPTIVE_THRESH_BLOCK_SIZE = 9;
+    private static final int ADAPTIVE_THRESH_C = 11;
+    private static final int HOUGH_THRESHOLD = 150;
+    private static final int HOUGH_MIN_LINE_LENGTH = 250;
+    private static final int HOUGH_MAX_LINE_GAP = 50;
+    private static final int LINE_THICKNESS = 13;
+    private static final Scalar LINE_COLOR = new Scalar(0, 0, 255);
+
     private final ImageUtil imageUtil;
-    private double contrast = 3.0;
-    private double thresh = 10.0;
-    private double maxVal = 255.0;
 
     public ImagePrepare() {
         this.imageUtil = new ImageUtil();
     }
 
+    public ImagePrepare(ImageUtil imageUtil) {
+        this.imageUtil = imageUtil;
+    }
+
     public Mat[][] prepare(Mat wrappedImage) {
-        this.removeLine(wrappedImage);
-        Mat[][] result = imageUtil.split(wrappedImage, Solution.SUDOKU_SIZE, Solution.SUDOKU_SIZE);
-        for (int i = 0; i < result.length; i++) {
-            for (int j = 0; j < result[0].length; j++) {
-                result[i][j] = DigitalClassifier.extractAndResizeDigit(result[i][j], new Size(60, 60));
-            }
+        Mat processedImage = this.preprocessImage(wrappedImage);
+        Mat[][] splitImages = null;
+        Mat[][] result = new Mat[Solution.SUDOKU_SIZE][Solution.SUDOKU_SIZE];
+
+        try {
+            splitImages = this.imageUtil.split(processedImage, Solution.SUDOKU_SIZE, Solution.SUDOKU_SIZE, 0);
+            this.processDigits(splitImages, result);
+        } finally {
+            processedImage.release();
+            this.imageUtil.releaseSubMats(splitImages);
+
         }
         return result;
     }
 
-    private void prepareImage(Mat image) {
-        Mat mat = null;
+    private Mat preprocessImage(Mat wrappedImage) {
+        Mat processed = new Mat();
         try {
-            mat = this.imageUtil.contrastEnhancement(image, this.contrast);
-            Imgproc.cvtColor(mat, image, Imgproc.COLOR_BGR2GRAY);
-            Imgproc.threshold(image, image, this.thresh, this.maxVal, Imgproc.THRESH_BINARY_INV);
-            this.resizeImage(image);
-        } finally {
-            if (mat != null) {
-                mat.release();
+            this.removeLines(wrappedImage, processed);
+            return processed;
+        } catch (Exception e) {
+            processed.release();
+            throw e;
+        }
+    }
+
+    private void processDigits(Mat[][] splitImage, Mat[][] result) {
+        for (int i = 0; i < result.length; i++) {
+            for (int j = 0; j < result[i].length; j++) {
+                result[i][j] = this.processSingleDigit(splitImage[i][j]);
             }
         }
     }
 
-    private void resizeImage(Mat image) {
-        final int count = Core.countNonZero(image);
-        if (count <= 50) {
-            image.release();
-        } else {
-            Imgproc.resize(image, image, new Size(60, 60));
+    private Mat processSingleDigit(Mat digitImage) {
+        try {
+            return this.imageUtil.extractAndResizeDigit(digitImage, IMAGE_DIGIT_SIZE);
+        } catch (Exception e) {
+            return new Mat();
         }
     }
 
-    private void removeLine(Mat wrapped) {
-        final Mat lines = new Mat();
+    private void removeLines(Mat input, Mat output) {
+        Mat gray = new Mat();
+        Mat binary = new Mat();
+        Mat lines = new Mat();
 
-        Imgproc.cvtColor(wrapped, wrapped, Imgproc.COLOR_RGB2GRAY);
+        try {
+            Imgproc.cvtColor(input, gray, Imgproc.COLOR_RGB2GRAY);
 
-        Imgproc.adaptiveThreshold(wrapped, wrapped, 255,
-                Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 9, 11);
+            Imgproc.adaptiveThreshold(gray, binary, 255,
+                    Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY,
+                    ADAPTIVE_THRESH_BLOCK_SIZE, ADAPTIVE_THRESH_C);
 
-        Core.bitwise_not(wrapped, wrapped);
-        Imgproc.HoughLinesP(wrapped, lines, 1,
-                Math.PI / 180, 150, 250, 50
-        );
+            Core.bitwise_not(binary, binary);
 
+            Imgproc.HoughLinesP(binary, lines, 1, Math.PI / 180,
+                    HOUGH_THRESHOLD, HOUGH_MIN_LINE_LENGTH, HOUGH_MAX_LINE_GAP);
+
+            this.removeDetectedLines(binary, lines);
+
+            binary.copyTo(output);
+        } finally {
+            imageUtil.releaseMats(gray, binary, lines);
+        }
+    }
+
+    private void removeDetectedLines(Mat image, Mat lines) {
         for (int r = 0; r < lines.rows(); r++) {
-            double[] l = lines.get(r, 0);
-            Imgproc.line(wrapped, new Point(l[0], l[1]), new Point(l[2], l[3]),
-                    new Scalar(0, 0, 255), 13, Imgproc.FILLED, 0
-            );
+            double[] line = lines.get(r, 0);
+            Point pt1 = new Point(line[0], line[1]);
+            Point pt2 = new Point(line[2], line[3]);
+            Imgproc.line(image, pt1, pt2, LINE_COLOR, LINE_THICKNESS, Imgproc.FILLED, 0);
         }
-
-        lines.release();
     }
+
+
 }

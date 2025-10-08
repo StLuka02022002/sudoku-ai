@@ -42,6 +42,7 @@ public class KafkaConsumerService {
         try {
             imageProcessing.processing(imagesInfo);
             log.debug("Successfully processed images: {}", imagesInfo.getImagesPaths().size());
+            ack.acknowledge();
         } catch (Exception e) {
             log.error("Error submitting images processing task: {}. Error: {}",
                     imagesInfo.getImagesPaths().size(), e.getMessage(), e);

@@ -4,23 +4,29 @@ import lombok.extern.slf4j.Slf4j;
 import luka.teum.dl_service.ai.Algorithm;
 import luka.teum.dl_service.messaging.KafkaProducerService;
 import luka.teum.dl_service.prepare.ImagePrepare;
+import luka.teum.image_service.util.ImageUtil;
 import messaging.Solution;
 import messaging.TelegramInfo;
 import messaging.image.ImagesInfo;
 import messaging.solution.SolutionsInfo;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import storage.Storage;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class ImageProcessing {
 
+    private static final String DIGIT_IMAGE_PREFIX = "digits\\";
+
     private final Storage<Mat> storage;
     private final KafkaProducerService kafkaProducerService;
+    private final ImageUtil imageUtil;
     private final ImagePrepare imagePrepare;
     private final Algorithm algorithm;
 
@@ -28,7 +34,8 @@ public class ImageProcessing {
         this.storage = storage;
         this.kafkaProducerService = kafkaProducerService;
         this.algorithm = new Algorithm();
-        this.imagePrepare = new ImagePrepare();
+        this.imageUtil = new ImageUtil();
+        this.imagePrepare = new ImagePrepare(imageUtil);
     }
 
     public ImageProcessing(Storage<Mat> storage, KafkaProducerService kafkaProducerService, String modelPath) {
@@ -39,7 +46,8 @@ public class ImageProcessing {
         } else {
             this.algorithm = new Algorithm();
         }
-        this.imagePrepare = new ImagePrepare();
+        this.imageUtil = new ImageUtil();
+        this.imagePrepare = new ImagePrepare(imageUtil);
     }
 
     public void processing(ImagesInfo imagesInfo) {
@@ -53,17 +61,31 @@ public class ImageProcessing {
 
     private Solution processSingleImage(String imagePath) {
         Mat image = null;
+        Mat[][] digits = null;
         try {
             image = this.storage.getData(imagePath);
-            Mat[][] digits = this.imagePrepare.prepare(image);
+            digits = this.imagePrepare.prepare(image);
             int[][] result = this.evaluateDigits(digits);
+            this.saveImagesDigits(digits, imagePath);
             return new Solution(result);
         } catch (Exception e) {
             log.error("Error processing image: {}", imagePath, e);
             return this.createEmptySolution();
         } finally {
-            if (image != null) {
-                image.release();
+            imageUtil.releaseMats(image);
+            imageUtil.releaseSubMats(digits);
+        }
+    }
+
+    private void saveImagesDigits(Mat[][] digits, String imagePath) {
+        for (int i = 0; i < digits.length; i++) {
+            for (int j = 0; j < digits[0].length; j++) {
+                String path = this.generateImageFileName(DIGIT_IMAGE_PREFIX, imagePath, i * 10 + j);
+                if (digits[i][j] == null || digits[i][j].empty()) {
+                    this.storage.saveData(path, new Mat(ImagePrepare.IMAGE_DIGIT_SIZE, CvType.CV_8U));
+                } else {
+                    this.storage.saveData(path, digits[i][j]);
+                }
             }
         }
     }
@@ -100,5 +122,24 @@ public class ImageProcessing {
                 .countSolutions(solutions.size())
                 .telegramInfo(telegramInfo)
                 .build();
+    }
+
+    private String generateImageFileName(String prefix, String wrappedImagePath, int digit) {
+        String imagePath = wrappedImagePath.replace('/', '\\');
+        int dotIndex = imagePath.indexOf('\\');
+        String imageName = (dotIndex == -1) ? imagePath : imagePath.substring(dotIndex + 1);
+
+        dotIndex = imageName.lastIndexOf('.');
+        imageName = (dotIndex == -1) ? imageName : imageName.substring(0, dotIndex);
+
+        return prefix + imageName + "\\" +
+                this.digitToString(digit) + "_"
+                + UUID.randomUUID();
+    }
+
+    private String digitToString(int digit) {
+        if (digit < 10) {
+            return "0" + digit;
+        } else return String.valueOf(digit);
     }
 }
