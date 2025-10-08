@@ -43,9 +43,11 @@ public class Algorithm {
     private static MultiLayerNetwork getModel() {
         MultiLayerNetwork model = ModelUtil.loadModel(DigitalClassifier.getModelPath());
         if (model == null) {
-            //DigitalClassifier.prepareModel();
+            DigitalClassifier.prepareModel();
+            return ModelUtil.loadModel(DigitalClassifier.getModelPath());
+        } else {
+            return model;
         }
-        return ModelUtil.loadModel(DigitalClassifier.getModelPath());
     }
 
     public int evaluateImage(Mat image) throws IOException {
@@ -56,7 +58,6 @@ public class Algorithm {
              INDArray imageData = nativeImageLoader.asRowVector(image)) {
             imagePreProcessingScaler.transform(imageData);
             input.putRow(0, imageData);
-
             DataSet dataSet = new DataSet(input, Nd4j.create(1, Solution.SUDOKU_SIZE + 1));
             INDArray predicted = model.output(dataSet.get(0).getFeatures(), false);
             INDArray predictedValue = BooleanIndexing.firstIndex(predicted, Conditions.equals(predicted.maxNumber()));

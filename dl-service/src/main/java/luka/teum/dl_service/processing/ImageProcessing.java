@@ -2,18 +2,19 @@ package luka.teum.dl_service.processing;
 
 import lombok.extern.slf4j.Slf4j;
 import luka.teum.dl_service.ai.Algorithm;
+import luka.teum.dl_service.messaging.KafkaProducerService;
 import luka.teum.dl_service.prepare.ImagePrepare;
-import luka.teum.image_service.messaging.KafkaProducerService;
-import luka.teum.image_service.util.ImageUtil;
 import messaging.Solution;
+import messaging.TelegramInfo;
 import messaging.image.ImagesInfo;
-import org.opencv.core.CvType;
+import messaging.solution.SolutionsInfo;
 import org.opencv.core.Mat;
-import org.opencv.core.Size;
 import storage.Storage;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ImageProcessing {
@@ -22,6 +23,13 @@ public class ImageProcessing {
     private final KafkaProducerService kafkaProducerService;
     private final ImagePrepare imagePrepare;
     private final Algorithm algorithm;
+
+    public ImageProcessing(Storage<Mat> storage, KafkaProducerService kafkaProducerService) {
+        this.storage = storage;
+        this.kafkaProducerService = kafkaProducerService;
+        this.algorithm = new Algorithm();
+        this.imagePrepare = new ImagePrepare();
+    }
 
     public ImageProcessing(Storage<Mat> storage, KafkaProducerService kafkaProducerService, String modelPath) {
         this.storage = storage;
@@ -35,40 +43,62 @@ public class ImageProcessing {
     }
 
     public void processing(ImagesInfo imagesInfo) {
-        int count = 0;
-        for (String imagePath :
-                imagesInfo.getImagesPaths()) {
-            Mat image = null;
-            try {
-                image = storage.getData(imagePath);
-                File file = new File("C:\\Code\\For Work\\sudoku-ai\\images\\digits\\" + count);
-                file.mkdir();
-                Mat[][] digits = imagePrepare.prepare(image);
-                int[][] result = new int[Solution.SUDOKU_SIZE][Solution.SUDOKU_SIZE];
-                for (int i = 0; i < Solution.SUDOKU_SIZE; i++) {
-                    for (int j = 0; j < Solution.SUDOKU_SIZE; j++) {
-                        try {
-                            result[i][j] = algorithm.evaluateImage(digits[i][j]);
-                            if (digits[i][j].empty()) {
-                                new ImageUtil().saveImage(file.getPath() + "\\" + i + j + ".png", Mat.ones(new Size(60, 60), CvType.CV_8U));
-                            } else {
-                                new ImageUtil().saveImage(file.getPath() + "\\" + i + j + ".png", digits[i][j]);
-                            }
-                        } catch (IOException e) {
-                            result[i][j] = Solution.NO_SOLUTION;
-                            new ImageUtil().saveImage(file.getPath() + "\\" + i + j + ".png", Mat.ones(new Size(60, 60), 50));
-                        }
-                    }
-                }
-                System.out.println(file.getAbsolutePath());
-                Solution solution = new Solution(result);
-                System.out.println(solution.getSolution());
-                count++;
-            } finally {
-                if (image != null) {
-                    image.release();
-                }
+        Set<Solution> solutions = imagesInfo.getImagesPaths().stream()
+                .map(this::processSingleImage)
+                .collect(Collectors.toSet());
+
+        SolutionsInfo solutionsInfo = this.buildSolutionsInfo(solutions, imagesInfo.getTelegramInfo());
+        this.kafkaProducerService.sendSolutionsProcessingInfoSync(solutionsInfo);
+    }
+
+    private Solution processSingleImage(String imagePath) {
+        Mat image = null;
+        try {
+            image = this.storage.getData(imagePath);
+            Mat[][] digits = this.imagePrepare.prepare(image);
+            int[][] result = this.evaluateDigits(digits);
+            return new Solution(result);
+        } catch (Exception e) {
+            log.error("Error processing image: {}", imagePath, e);
+            return this.createEmptySolution();
+        } finally {
+            if (image != null) {
+                image.release();
             }
         }
+    }
+
+    private int[][] evaluateDigits(Mat[][] digits) {
+        int[][] result = new int[Solution.SUDOKU_SIZE][Solution.SUDOKU_SIZE];
+
+        for (int i = 0; i < Solution.SUDOKU_SIZE; i++) {
+            for (int j = 0; j < Solution.SUDOKU_SIZE; j++) {
+                result[i][j] = this.evaluateSingleDigit(digits[i][j]);
+            }
+        }
+        return result;
+    }
+
+    private int evaluateSingleDigit(Mat digit) {
+        try {
+            return this.algorithm.evaluateImage(digit);
+        } catch (IOException e) {
+            log.warn("Failed to evaluate digit, using NO_SOLUTION", e);
+            return Solution.NO_SOLUTION;
+        }
+    }
+
+    private Solution createEmptySolution() {
+        int[][] emptyResult = new int[Solution.SUDOKU_SIZE][Solution.SUDOKU_SIZE];
+        Arrays.stream(emptyResult).forEach(row -> Arrays.fill(row, Solution.NO_SOLUTION));
+        return new Solution(emptyResult);
+    }
+
+    private SolutionsInfo buildSolutionsInfo(Set<Solution> solutions, TelegramInfo telegramInfo) {
+        return SolutionsInfo.builder()
+                .solutions(solutions)
+                .countSolutions(solutions.size())
+                .telegramInfo(telegramInfo)
+                .build();
     }
 }

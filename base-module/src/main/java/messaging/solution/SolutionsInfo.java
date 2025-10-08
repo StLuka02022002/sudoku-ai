@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import messaging.Solution;
 import messaging.TelegramInfo;
 
-import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SolutionsInfo {
 
-    private List<Solution> solutions;
+    private Set<Solution> solutions;
     private Integer countSolutions;
     private TelegramInfo telegramInfo;
 }

@@ -5,7 +5,6 @@ import luka.teum.dl_service.ai.util.DataSetUtil;
 import luka.teum.dl_service.ai.util.ModelUtil;
 import luka.teum.image_service.util.ImageUtil;
 import messaging.Solution;
-import nu.pattern.OpenCV;
 import org.datavec.image.loader.NativeImageLoader;
 import org.deeplearning4j.datasets.iterator.utilty.ListDataSetIterator;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
@@ -45,8 +44,8 @@ public class DigitalClassifier {
     public static final ImageUtil imageUtil = new ImageUtil();
 
     public static void main(String[] args) throws URISyntaxException, IOException {
-        //prepareModel();
-        trainModel();
+        prepareModel();
+        //trainModel();
         //OpenCV.loadLocally();
         //newTrain();
         //prepareImage("C:\\Code\\For Work\\sudoku-ai\\images\\testing");

@@ -20,37 +20,37 @@ public class KafkaProducerService extends BaseKafkaProducerService {
         super(kafkaTemplate);
     }
 
-    private void sendSolutionsProcessingInfoAsync(SolutionsInfo solutionsInfo) {
+    public void sendSolutionsProcessingInfoAsync(SolutionsInfo solutionsInfo) {
         String key = solutionsInfo.getTelegramInfo().getUserId().toString();
         this.sendAsync(key, solutionsInfo, solutionsProcessingInfoTopic);
     }
 
-    private void sendSolutionsProcessingIneInfoAsync(SolutionsOneInfo solutionsOneInfo) {
+    public void sendSolutionsProcessingOneInfoAsync(SolutionsOneInfo solutionsOneInfo) {
         String key = solutionsOneInfo.getTelegramInfo().getUserId().toString();
         this.sendAsync(key, solutionsOneInfo, solutionsProcessingInfoTopic);
     }
 
-    private void sendSolutionsProcessingInfoSync(SolutionsInfo solutionsInfo) {
+    public void sendSolutionsProcessingInfoSync(SolutionsInfo solutionsInfo) {
         String key = solutionsInfo.getTelegramInfo().getUserId().toString();
         this.sendSync(key, solutionsInfo, solutionsProcessingInfoTopic);
     }
 
-    private void sendSolutionsProcessingIneInfoSync(SolutionsOneInfo solutionsOneInfo) {
+    public void sendSolutionsProcessingOneInfoSync(SolutionsOneInfo solutionsOneInfo) {
         String key = solutionsOneInfo.getTelegramInfo().getUserId().toString();
         this.sendSync(key, solutionsOneInfo, solutionsProcessingInfoTopic);
     }
 
-    private void sendWithTimeout(SolutionsInfo solutionsInfo, long timeoutMs) {
+    public void sendWithTimeout(SolutionsInfo solutionsInfo, long timeoutMs) {
         String key = solutionsInfo.getTelegramInfo().getUserId().toString();
         this.sendWithTimeout(key, solutionsInfo, solutionsProcessingInfoTopic, timeoutMs);
     }
 
-    private void sendWithTimeout(SolutionsInfo solutionsInfo) {
+    public void sendWithTimeout(SolutionsInfo solutionsInfo) {
         String key = solutionsInfo.getTelegramInfo().getUserId().toString();
         this.sendWithTimeout(key, solutionsInfo, solutionsProcessingInfoTopic, DEFAULT_TIMEOUT_MS);
     }
 
-    private void sendWithTimeout(SolutionsOneInfo solutionsOneInfo) {
+    public void sendWithTimeout(SolutionsOneInfo solutionsOneInfo) {
         String key = solutionsOneInfo.getTelegramInfo().getUserId().toString();
         this.sendWithTimeout(key, solutionsOneInfo, solutionsProcessingInfoTopic, DEFAULT_TIMEOUT_MS);
     }
