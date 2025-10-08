@@ -13,8 +13,7 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -42,17 +41,20 @@ public class KafkaConsumerService {
         log.debug("Image details: {}", solutionsInfo);
 
         try {
-            Set<Solution> solutions = solutionsInfo.getSolutions().stream()
+            Optional<Solution> solution = solutionsInfo.getSolutions().stream()
                     .map(solver::solve)
                     .filter(Solution::isSolved)
-                    .collect(Collectors.toSet());
+                    .findAny();
 
-            solutions.forEach(solution -> {
-                SolutionsOneInfo answer = this.buildSolutionONeInfo(solution, solutionsInfo.getTelegramInfo());
+            if (solution.isEmpty()) {
+                SolutionsOneInfo answer = this.buildSolutionONeInfo(new Solution(), solutionsInfo.getTelegramInfo());
                 kafkaProducerService.sendSudokuSolutionSync(answer);
-            });
-
-            log.debug("Successfully processed solutions: {}", solutions.size());
+                log.debug("Failed processed solutions: {}", solutionsInfo.getSolutions().size());
+            } else {
+                SolutionsOneInfo answer = this.buildSolutionONeInfo(solution.get(), solutionsInfo.getTelegramInfo());
+                kafkaProducerService.sendSudokuSolutionSync(answer);
+                log.debug("Successfully processed solutions: {}", solution.get().isSolved());
+            }
             ack.acknowledge();
         } catch (Exception e) {
             log.error("Error submitting images processing task: {}. Error: {}",

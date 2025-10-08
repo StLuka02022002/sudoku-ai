@@ -28,9 +28,15 @@ public class Solution {
         if (digits == null) {
             return false;
         }
+        if (digits.length == 0) {
+            return false;
+        }
+        if (digits[0].length == 0) {
+            return false;
+        }
         for (int[] digit : digits) {
             for (int i = 0; i < digits[0].length; i++) {
-                if (digit[i] <= NO_SOLUTION + 1 ||
+                if (digit[i] <= NO_SOLUTION ||
                         digit[i] > SUDOKU_SIZE) {
                     return false;
                 }
